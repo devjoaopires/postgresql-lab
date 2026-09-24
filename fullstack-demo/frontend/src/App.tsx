@@ -1,47 +1,56 @@
-import { useEffect, useState } from 'react';
-import { createCustomer, getProducts } from './api.js';
+import { type FormEvent, useEffect, useState } from 'react';
+
+import {
+  createCustomer,
+  getProducts,
+  type CustomerInput,
+  type Product
+} from './api';
+
+const emptyCustomer: CustomerInput = {
+  nome: '',
+  email: '',
+  documento: ''
+};
 
 export function App() {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [search, setSearch] = useState('');
   const [message, setMessage] = useState('');
-  const [customer, setCustomer] = useState({
-    nome: '',
-    email: '',
-    documento: ''
-  });
+  const [customer, setCustomer] = useState<CustomerInput>(emptyCustomer);
 
-  async function loadProducts(term = '') {
+  async function loadProducts(term = ''): Promise<void> {
     try {
+      setMessage('');
       setProducts(await getProducts(term));
     } catch (error) {
-      setMessage(error.message);
+      setMessage(error instanceof Error ? error.message : 'Erro ao buscar produtos');
     }
   }
 
   useEffect(() => {
-    loadProducts();
+    void loadProducts();
   }, []);
 
-  async function submitCustomer(event) {
+  async function submitCustomer(event: FormEvent<HTMLFormElement>): Promise<void> {
     event.preventDefault();
 
     try {
       const created = await createCustomer(customer);
       setMessage(`Cliente ${created.nome} criado com ID ${created.id}.`);
-      setCustomer({ nome: '', email: '', documento: '' });
+      setCustomer(emptyCustomer);
     } catch (error) {
-      setMessage(error.message);
+      setMessage(error instanceof Error ? error.message : 'Erro ao cadastrar cliente');
     }
   }
 
   return (
     <main className="container">
       <header>
-        <span className="eyebrow">React + Node.js + PostgreSQL</span>
+        <span className="eyebrow">React + TypeScript + Node.js + PostgreSQL</span>
         <h1>PostgreSQL Lab Fullstack</h1>
         <p>
-          Interface simples consumindo uma API Express conectada ao schema
+          Interface tipada consumindo uma API Express conectada ao schema
           <code> lab</code>.
         </p>
       </header>
@@ -55,7 +64,7 @@ export function App() {
           className="search"
           onSubmit={(event) => {
             event.preventDefault();
-            loadProducts(search);
+            void loadProducts(search);
           }}
         >
           <input
@@ -87,12 +96,12 @@ export function App() {
       <section className="card">
         <h2>Novo cliente</h2>
 
-        <form className="form" onSubmit={submitCustomer}>
+        <form className="form" onSubmit={(event) => void submitCustomer(event)}>
           <input
             required
             value={customer.nome}
             onChange={(event) =>
-              setCustomer({ ...customer, nome: event.target.value })
+              setCustomer((current) => ({ ...current, nome: event.target.value }))
             }
             placeholder="Nome"
           />
@@ -101,14 +110,17 @@ export function App() {
             type="email"
             value={customer.email}
             onChange={(event) =>
-              setCustomer({ ...customer, email: event.target.value })
+              setCustomer((current) => ({ ...current, email: event.target.value }))
             }
             placeholder="E-mail"
           />
           <input
             value={customer.documento}
             onChange={(event) =>
-              setCustomer({ ...customer, documento: event.target.value })
+              setCustomer((current) => ({
+                ...current,
+                documento: event.target.value
+              }))
             }
             placeholder="Documento fictício"
           />

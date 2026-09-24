@@ -1,9 +1,10 @@
 import 'dotenv/config';
 import cors from 'cors';
-import express from 'express';
+import express, { type NextFunction, type Request, type Response } from 'express';
 import helmet from 'helmet';
 
 import { pool } from './db.js';
+import { AppError } from './errors.js';
 import { customersRouter } from './routes/customers.routes.js';
 import { productsRouter } from './routes/products.routes.js';
 import { salesRouter } from './routes/sales.routes.js';
@@ -18,7 +19,7 @@ app.use(
 );
 app.use(express.json({ limit: '1mb' }));
 
-app.get('/health', async (_req, res, next) => {
+app.get('/health', async (_req: Request, res: Response, next: NextFunction) => {
   try {
     await pool.query('SELECT 1');
     res.json({ ok: true, database: 'connected' });
@@ -31,9 +32,15 @@ app.use('/api/products', productsRouter);
 app.use('/api/customers', customersRouter);
 app.use('/api/sales', salesRouter);
 
-app.use((error, _req, res, _next) => {
-  console.error(error);
-  res.status(error.status || 500).json({
-    error: error.status ? error.message : 'Erro interno do servidor'
-  });
-});
+app.use(
+  (error: unknown, _req: Request, res: Response, _next: NextFunction) => {
+    console.error(error);
+
+    if (error instanceof AppError) {
+      res.status(error.status).json({ error: error.message });
+      return;
+    }
+
+    res.status(500).json({ error: 'Erro interno do servidor' });
+  }
+);

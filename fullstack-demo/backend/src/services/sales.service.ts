@@ -1,10 +1,34 @@
 import { pool } from '../db.js';
+import { AppError } from '../errors.js';
 
-export async function createSale({ clienteId, itens, formaPagamento }) {
+type SaleItemInput = {
+  produtoId: number;
+  quantidade: number;
+};
+
+type CreateSaleInput = {
+  clienteId: number;
+  itens: SaleItemInput[];
+  formaPagamento: string;
+};
+
+type CreatedSale = {
+  id: string;
+  cliente_id: string;
+  subtotal: string;
+  desconto: string;
+  total: string;
+  status: string;
+  finalizada_em: string;
+};
+
+export async function createSale({
+  clienteId,
+  itens,
+  formaPagamento
+}: CreateSaleInput): Promise<CreatedSale> {
   if (!Number.isInteger(clienteId) || !Array.isArray(itens) || itens.length === 0) {
-    const error = new Error('clienteId e itens são obrigatórios');
-    error.status = 400;
-    throw error;
+    throw new AppError('clienteId e itens são obrigatórios', 400);
   }
 
   const client = await pool.connect();
@@ -21,31 +45,36 @@ export async function createSale({ clienteId, itens, formaPagamento }) {
     );
 
     if (clienteResult.rowCount === 0) {
-      const error = new Error('Cliente não encontrado');
-      error.status = 404;
-      throw error;
+      throw new AppError('Cliente não encontrado', 404);
     }
 
-    const vendaResult = await client.query(
+    const vendaResult = await client.query<{ id: string }>(
       `INSERT INTO lab.vendas (cliente_id, status, subtotal, desconto, total)
        VALUES ($1, 'ABERTA', 0, 0, 0)
        RETURNING id`,
       [clienteId]
     );
 
-    const vendaId = vendaResult.rows[0].id;
+    const vendaId = vendaResult.rows[0]?.id;
+
+    if (!vendaId) {
+      throw new AppError('Falha ao criar venda', 500);
+    }
 
     for (const item of itens) {
       const produtoId = Number(item.produtoId);
       const quantidade = Number(item.quantidade);
 
       if (!Number.isInteger(produtoId) || !Number.isFinite(quantidade) || quantidade <= 0) {
-        const error = new Error('Item de venda inválido');
-        error.status = 400;
-        throw error;
+        throw new AppError('Item de venda inválido', 400);
       }
 
-      const produtoResult = await client.query(
+      const produtoResult = await client.query<{
+        id: string;
+        nome: string;
+        preco: string;
+        estoque_atual: string;
+      }>(
         `SELECT id, nome, preco, estoque_atual
            FROM lab.produtos
           WHERE id = $1
@@ -54,18 +83,14 @@ export async function createSale({ clienteId, itens, formaPagamento }) {
         [produtoId]
       );
 
-      if (produtoResult.rowCount === 0) {
-        const error = new Error(`Produto ${produtoId} não encontrado`);
-        error.status = 404;
-        throw error;
-      }
-
       const produto = produtoResult.rows[0];
 
+      if (!produto) {
+        throw new AppError(`Produto ${produtoId} não encontrado`, 404);
+      }
+
       if (Number(produto.estoque_atual) < quantidade) {
-        const error = new Error(`Estoque insuficiente para ${produto.nome}`);
-        error.status = 409;
-        throw error;
+        throw new AppError(`Estoque insuficiente para ${produto.nome}`, 409);
       }
 
       const preco = Number(produto.preco);
@@ -95,14 +120,14 @@ export async function createSale({ clienteId, itens, formaPagamento }) {
       );
     }
 
-    const totalResult = await client.query(
-      `SELECT subtotal, desconto, total
+    const totalResult = await client.query<{ total: string }>(
+      `SELECT total
          FROM lab.vendas
         WHERE id = $1`,
       [vendaId]
     );
 
-    const total = Number(totalResult.rows[0].total);
+    const total = Number(totalResult.rows[0]?.total ?? 0);
 
     await client.query(
       `INSERT INTO lab.pagamentos (venda_id, forma, valor, status)
@@ -110,7 +135,7 @@ export async function createSale({ clienteId, itens, formaPagamento }) {
       [vendaId, formaPagamento, total]
     );
 
-    const finalResult = await client.query(
+    const finalResult = await client.query<CreatedSale>(
       `UPDATE lab.vendas
           SET status = 'FINALIZADA',
               finalizada_em = NOW()
@@ -120,7 +145,14 @@ export async function createSale({ clienteId, itens, formaPagamento }) {
     );
 
     await client.query('COMMIT');
-    return finalResult.rows[0];
+
+    const venda = finalResult.rows[0];
+
+    if (!venda) {
+      throw new AppError('Falha ao finalizar venda', 500);
+    }
+
+    return venda;
   } catch (error) {
     await client.query('ROLLBACK');
     throw error;

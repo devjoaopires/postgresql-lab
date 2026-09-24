@@ -1,11 +1,11 @@
 # 🌐 Fullstack Demo
 
-Demonstração de integração entre **React**, **Node.js/Express** e **PostgreSQL** usando o mesmo schema fictício do laboratório.
+Demonstração de integração entre **React + TypeScript**, **Node.js/Express + TypeScript** e **PostgreSQL** usando o mesmo schema fictício do laboratório.
 
 ## Stack
 
+- TypeScript
 - React + Vite
-- JavaScript
 - Node.js
 - Express
 - PostgreSQL
@@ -15,12 +15,14 @@ Demonstração de integração entre **React**, **Node.js/Express** e **PostgreS
 
 ## O que este exemplo demonstra
 
+- TypeScript em frontend e backend
+- Tipagem das respostas da API e payloads
 - Pool de conexões PostgreSQL
 - Queries parametrizadas com `$1`, `$2`, etc.
 - API REST
 - tratamento de erros de constraint
 - pesquisa com `ILIKE`
-- frontend consumindo a API
+- frontend React consumindo a API
 - transação de venda com `BEGIN`, `COMMIT` e `ROLLBACK`
 - lock pessimista com `SELECT ... FOR UPDATE`
 - atualização de estoque dentro da mesma transação
@@ -41,10 +43,18 @@ psql -d postgresql_lab -f setup.sql
 cd fullstack-demo/backend
 cp .env.example .env
 npm install
+npm run typecheck
 npm run dev
 ```
 
 API: `http://localhost:3001`
+
+Para gerar JavaScript compilado em `dist/`:
+
+```bash
+npm run build
+npm start
+```
 
 Endpoints:
 
@@ -78,9 +88,16 @@ Em outro terminal:
 cd fullstack-demo/frontend
 cp .env.example .env
 npm install
+npm run typecheck
 npm run dev
 ```
 
 Frontend: `http://localhost:5173`
+
+Para gerar o build de produção:
+
+```bash
+npm run build
+```
 
 > Todo o projeto usa somente dados fictícios.

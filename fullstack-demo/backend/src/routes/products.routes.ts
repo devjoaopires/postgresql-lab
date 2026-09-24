@@ -1,15 +1,27 @@
-import { Router } from 'express';
+import { Router, type NextFunction, type Request, type Response } from 'express';
 import { pool } from '../db.js';
+
+type ProductRow = {
+  id: string;
+  sku: string;
+  nome: string;
+  preco: string;
+  estoque_atual: string;
+  categoria: string | null;
+};
 
 export const productsRouter = Router();
 
-productsRouter.get('/', async (req, res, next) => {
+productsRouter.get('/', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const search = String(req.query.q || '').trim();
     const requestedLimit = Number(req.query.limit || 20);
-    const limit = Math.min(Math.max(Number.isFinite(requestedLimit) ? requestedLimit : 20, 1), 100);
+    const limit = Math.min(
+      Math.max(Number.isFinite(requestedLimit) ? requestedLimit : 20, 1),
+      100
+    );
 
-    const result = await pool.query(
+    const result = await pool.query<ProductRow>(
       `SELECT
           p.id,
           p.sku,

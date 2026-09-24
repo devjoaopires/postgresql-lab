@@ -1,6 +1,6 @@
 # 🐘 PostgreSQL Lab
 
-Laboratório prático dedicado ao estudo e à aplicação de **PostgreSQL**, com foco em modelagem relacional, SQL, integridade de dados, transações, performance e integração Fullstack.
+Laboratório prático dedicado ao estudo e à aplicação de **PostgreSQL**, com foco em modelagem relacional, SQL, integridade de dados, transações, performance e integração Fullstack com **TypeScript**.
 
 Este repositório utiliza apenas **dados fictícios** e foi criado para demonstrar, por meio de código executável, conhecimentos aplicáveis a sistemas reais.
 
@@ -8,7 +8,7 @@ Este repositório utiliza apenas **dados fictícios** e foi criado para demonstr
 
 ## 🎯 Objetivo
 
-Demonstrar de forma prática conceitos usados no desenvolvimento de aplicações que trabalham com bancos de dados relacionais, desde a criação do schema até análise de planos de execução, otimização de consultas e integração com uma aplicação web.
+Demonstrar de forma prática conceitos usados no desenvolvimento de aplicações que trabalham com bancos de dados relacionais, desde a criação do schema até análise de planos de execução, otimização de consultas e integração com uma aplicação web tipada.
 
 ---
 
@@ -31,10 +31,11 @@ Demonstrar de forma prática conceitos usados no desenvolvimento de aplicações
 - Prepared Statements e queries parametrizadas
 - `EXPLAIN` e `EXPLAIN ANALYZE`
 - Análise de buffers e planos de execução
-- API REST com Node.js e Express
+- API REST com Node.js, Express e TypeScript
 - Pool de conexões com `pg`
 - Transações PostgreSQL controladas pelo backend
-- React consumindo a API
+- React + TypeScript consumindo a API
+- Tipagem de payloads e respostas
 - Boas práticas de configuração com variáveis de ambiente
 
 ---
@@ -78,22 +79,25 @@ postgresql-lab/
 │   │   ├── src/
 │   │   │   ├── routes/
 │   │   │   ├── services/
-│   │   │   ├── app.js
-│   │   │   ├── db.js
-│   │   │   └── server.js
+│   │   │   ├── app.ts
+│   │   │   ├── db.ts
+│   │   │   ├── errors.ts
+│   │   │   └── server.ts
 │   │   ├── .env.example
+│   │   ├── tsconfig.json
 │   │   └── package.json
 │   │
 │   ├── frontend/
 │   │   ├── src/
-│   │   │   ├── App.jsx
-│   │   │   ├── api.js
-│   │   │   ├── main.jsx
+│   │   │   ├── App.tsx
+│   │   │   ├── api.ts
+│   │   │   ├── main.tsx
 │   │   │   └── styles.css
 │   │   ├── .env.example
 │   │   ├── index.html
+│   │   ├── tsconfig.json
 │   │   ├── package.json
-│   │   └── vite.config.js
+│   │   └── vite.config.ts
 │   │
 │   └── README.md
 │
@@ -106,15 +110,7 @@ postgresql-lab/
 
 ## 🗃️ Banco de exemplo
 
-O laboratório simula um pequeno sistema comercial com entidades como:
-
-- clientes
-- categorias
-- produtos
-- vendas
-- itens de venda
-- pagamentos
-- movimentações de estoque
+O laboratório simula um pequeno sistema comercial com clientes, categorias, produtos, vendas, itens de venda, pagamentos e movimentações de estoque.
 
 O dataset em `examples/ecommerce.sql` é totalmente fictício.
 
@@ -124,15 +120,8 @@ O dataset em `examples/ecommerce.sql` é totalmente fictício.
 
 Tenha o PostgreSQL e o cliente `psql` instalados.
 
-Crie o banco:
-
 ```bash
 createdb postgresql_lab
-```
-
-Na raiz do repositório, execute:
-
-```bash
 psql -d postgresql_lab -f setup.sql
 ```
 
@@ -142,44 +131,19 @@ O `setup.sql` cria tabelas, constraints, foreign keys, índices, functions, trig
 
 ## 🌐 Fullstack Demo
 
-A pasta `fullstack-demo/` conecta o PostgreSQL a uma aplicação web completa.
+A pasta `fullstack-demo/` conecta o PostgreSQL a uma aplicação web tipada de ponta a ponta.
 
 ### Backend
 
-**Node.js + Express + pg**
+**Node.js + Express + TypeScript + pg**
 
-Demonstra:
-
-- pool de conexões;
-- queries parametrizadas;
-- tratamento de constraints;
-- API REST;
-- pesquisa com `ILIKE`;
-- `BEGIN`, `COMMIT` e `ROLLBACK`;
-- `SELECT ... FOR UPDATE`;
-- atualização de estoque dentro da transação;
-- health check do banco.
-
-Endpoints:
-
-```text
-GET  /health
-GET  /api/products?q=mouse
-POST /api/customers
-POST /api/sales
-```
+Demonstra pool de conexões, queries parametrizadas, API REST, tratamento de constraints, `ILIKE`, `BEGIN`, `COMMIT`, `ROLLBACK`, `SELECT ... FOR UPDATE`, atualização de estoque transacional e health check do banco.
 
 ### Frontend
 
-**React + Vite**
+**React + TypeScript + Vite**
 
-A interface:
-
-- consulta produtos na API;
-- permite busca por nome/SKU;
-- renderiza dados vindos do PostgreSQL;
-- cadastra clientes via API;
-- trata respostas e erros do backend.
+A interface consulta produtos, pesquisa por nome/SKU, renderiza dados vindos do PostgreSQL e cadastra clientes pela API com tipos compartilhados no cliente.
 
 Instruções completas estão em `fullstack-demo/README.md`.
 
@@ -206,31 +170,13 @@ ORDER BY quantidade_vendida DESC
 LIMIT 10;
 ```
 
-Os exemplos observam `Seq Scan`, `Index Scan`, estimativas de linhas, índices compostos, funcionais e parciais, buffers e tempo total.
-
 ---
 
 ## 🔐 Segurança e privacidade
 
 Este projeto não utiliza credenciais, dumps ou informações de produção.
 
-O `.gitignore` bloqueia arquivos comuns que podem conter informações sensíveis:
-
-```text
-.env
-.env.*
-*.pem
-*.key
-*.p12
-*.pfx
-*.dump
-*.backup
-*.sql.gz
-node_modules/
-dist/
-```
-
-Os arquivos `.env.example` contêm somente valores genéricos para configuração local.
+O `.gitignore` bloqueia arquivos comuns que podem conter informações sensíveis, enquanto os arquivos `.env.example` contêm apenas valores genéricos para desenvolvimento local.
 
 ---
 
@@ -238,14 +184,14 @@ Os arquivos `.env.example` contêm somente valores genéricos para configuraçã
 
 <p>
   <img alt="PostgreSQL" title="PostgreSQL" width="42px" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/postgresql/postgresql-original.svg" />&nbsp;
+  <img alt="TypeScript" title="TypeScript" width="42px" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/typescript/typescript-original.svg" />&nbsp;
   <img alt="Node.js" title="Node.js" width="42px" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/nodejs/nodejs-original.svg" />&nbsp;
   <img alt="Express" title="Express" width="42px" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/express/express-original.svg" />&nbsp;
-  <img alt="JavaScript" title="JavaScript" width="42px" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/javascript/javascript-original.svg" />&nbsp;
   <img alt="React" title="React" width="42px" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/react/react-original.svg" />&nbsp;
   <img alt="Vite" title="Vite" width="42px" src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/vitejs/vitejs-original.svg" />
 </p>
 
-**PostgreSQL · SQL · PL/pgSQL · Node.js · Express · JavaScript · React · Vite**
+**PostgreSQL · SQL · PL/pgSQL · TypeScript · Node.js · Express · React · Vite**
 
 ---
 
