@@ -1,41 +1,36 @@
 # 🐘 PostgreSQL Lab
 
-Laboratório prático dedicado ao estudo e à aplicação de **PostgreSQL**, com foco em modelagem de dados, SQL, integridade, performance e recursos avançados de bancos de dados relacionais.
+Laboratório prático dedicado ao estudo e à aplicação de **PostgreSQL**, com foco em modelagem relacional, SQL, integridade de dados, transações, performance e recursos avançados.
 
-Este repositório reúne exemplos desenvolvidos para demonstrar conhecimentos práticos em PostgreSQL utilizando cenários e dados totalmente fictícios.
+Este repositório utiliza apenas **dados fictícios** e foi criado para demonstrar, por meio de código executável, conhecimentos aplicáveis a sistemas reais.
 
 ---
 
 ## 🎯 Objetivo
 
-O objetivo deste projeto é documentar e demonstrar, de forma prática, conceitos utilizados no desenvolvimento de aplicações que trabalham com bancos de dados relacionais.
-
-Os exemplos abrangem desde a criação de estruturas básicas até consultas, transações e técnicas de otimização.
+Demonstrar de forma prática conceitos usados no desenvolvimento de aplicações que trabalham com bancos de dados relacionais, desde a criação do schema até análise de planos de execução e otimização de consultas.
 
 ---
 
 ## 🧠 Conteúdos abordados
 
 - Modelagem de bancos de dados relacionais
-- Criação e alteração de tabelas
 - Primary Keys e Foreign Keys
-- Constraints
-- Relacionamentos entre tabelas
-- `INNER JOIN`, `LEFT JOIN` e outros tipos de JOIN
-- Subqueries
+- `CHECK`, `UNIQUE` e integridade referencial
+- Relacionamentos e regras de exclusão/atualização
+- `INNER JOIN` e `LEFT JOIN`
+- Subqueries e `EXISTS`
 - Common Table Expressions (`CTE`)
-- Agregações e agrupamentos
-- Views
-- Functions
+- Agregações e `FILTER`
+- Views e Materialized Views
+- Functions SQL e PL/pgSQL
 - Triggers
-- Transactions
-- Índices
+- Transactions, `SAVEPOINT` e `FOR UPDATE`
+- Índices compostos, funcionais e parciais
 - Window Functions
-- Consultas parametrizadas
-- Integridade referencial
-- `EXPLAIN`
-- `EXPLAIN ANALYZE`
-- Otimização de consultas
+- Prepared Statements e consultas parametrizadas
+- `EXPLAIN` e `EXPLAIN ANALYZE`
+- Análise de buffers e planos de execução
 - Boas práticas com PostgreSQL
 
 ---
@@ -56,7 +51,9 @@ postgresql-lab/
 │   ├── subqueries.sql
 │   ├── cte.sql
 │   ├── window-functions.sql
-│   └── reports.sql
+│   ├── reports.sql
+│   ├── views.sql
+│   └── prepared-statements.sql
 │
 ├── functions/
 │   ├── functions.sql
@@ -72,6 +69,8 @@ postgresql-lab/
 ├── examples/
 │   └── ecommerce.sql
 │
+├── setup.sql
+├── .gitignore
 └── README.md
 ```
 
@@ -79,73 +78,97 @@ postgresql-lab/
 
 ## 🗃️ Banco de exemplo
 
-Os exemplos deste laboratório utilizam um cenário fictício de sistema comercial, permitindo trabalhar com entidades como:
+O laboratório simula um pequeno sistema comercial com entidades como:
 
 - clientes
-- produtos
 - categorias
+- produtos
 - vendas
 - itens de venda
 - pagamentos
-- estoque
+- movimentações de estoque
 
-Nenhum dado utilizado neste projeto pertence a sistemas ou bancos de dados reais.
+O dataset em `examples/ecommerce.sql` é totalmente fictício.
 
 ---
 
 ## 🚀 Executando o projeto
 
-É necessário ter o PostgreSQL instalado.
+Tenha o PostgreSQL e o cliente `psql` instalados.
 
-Crie um banco para o laboratório:
-
-```sql
-CREATE DATABASE postgresql_lab;
-```
-
-Ou pelo terminal:
+Crie o banco:
 
 ```bash
 createdb postgresql_lab
 ```
 
-Depois, execute os arquivos SQL:
+Na raiz do repositório, execute:
 
 ```bash
-psql -d postgresql_lab -f schema/01_tables.sql
+psql -d postgresql_lab -f setup.sql
 ```
 
-Os demais scripts podem ser executados conforme a ordem e o assunto estudado.
+O `setup.sql` executa, na ordem:
+
+1. criação das tabelas;
+2. constraints;
+3. foreign keys;
+4. índices;
+5. functions;
+6. triggers;
+7. dataset fictício.
+
+Depois disso, os arquivos de `queries/`, `transactions/` e `performance/` podem ser executados individualmente.
+
+Exemplo:
+
+```bash
+psql -d postgresql_lab -f queries/cte.sql
+```
 
 ---
 
 ## ⚡ Performance
 
-Uma parte do laboratório é dedicada à análise e otimização de consultas utilizando recursos nativos do PostgreSQL.
+O laboratório inclui exemplos com `EXPLAIN (ANALYZE, BUFFERS)` para comparar estimativas do planner com a execução real.
 
 Exemplo:
 
 ```sql
-EXPLAIN ANALYZE
+EXPLAIN (ANALYZE, BUFFERS)
 SELECT
-    c.nome,
-    COUNT(v.id) AS total_vendas
-FROM clientes c
-LEFT JOIN vendas v
-    ON v.cliente_id = c.id
-GROUP BY c.id, c.nome
-ORDER BY total_vendas DESC;
+    p.id,
+    p.nome,
+    SUM(iv.quantidade) AS quantidade_vendida
+FROM lab.produtos AS p
+JOIN lab.itens_venda AS iv
+    ON iv.produto_id = p.id
+JOIN lab.vendas AS v
+    ON v.id = iv.venda_id
+WHERE v.status = 'FINALIZADA'
+GROUP BY p.id, p.nome
+ORDER BY quantidade_vendida DESC
+LIMIT 10;
 ```
 
-O objetivo é analisar planos de execução, identificar gargalos e entender quando índices podem melhorar o desempenho das consultas.
+Os exemplos observam pontos como:
+
+- `Seq Scan` versus `Index Scan`;
+- estimativa de linhas versus linhas reais;
+- índices compostos;
+- índices funcionais;
+- índices parciais;
+- custo de ordenação;
+- buffers utilizados;
+- tempo total da consulta.
 
 ---
 
 ## 🔐 Segurança e privacidade
 
-Este projeto utiliza somente informações fictícias.
+Este projeto não utiliza credenciais, dumps ou informações de produção.
 
-Arquivos com credenciais ou informações sensíveis não devem ser versionados, incluindo:
+O `.gitignore` bloqueia arquivos comuns que podem conter informações sensíveis, como:
 
 ```text
 .env
@@ -155,10 +178,19 @@ Arquivos com credenciais ou informações sensíveis não devem ser versionados,
 *.p12
 *.pfx
 *.dump
+*.backup
 *.sql.gz
 ```
 
-Credenciais de bancos reais, endereços de servidores, backups e informações de clientes não fazem parte deste repositório.
+Não fazem parte deste repositório:
+
+- senhas de banco;
+- strings de conexão reais;
+- IPs de servidores;
+- backups de produção;
+- certificados;
+- tokens;
+- informações reais de clientes.
 
 ---
 
@@ -179,9 +211,7 @@ Credenciais de bancos reais, endereços de servidores, backups e informações d
 
 ## 📈 Evolução do laboratório
 
-Este repositório será expandido gradualmente com novos exemplos de SQL, modelagem, administração e otimização de bancos PostgreSQL.
-
-A ideia é manter os exemplos organizados, reproduzíveis e próximos de situações encontradas em aplicações reais.
+O repositório pode continuar evoluindo com exemplos de migrations, isolamento de transações, locking, JSONB, full-text search, procedures, particionamento, backup/restore e outras funcionalidades do PostgreSQL.
 
 ---
 
