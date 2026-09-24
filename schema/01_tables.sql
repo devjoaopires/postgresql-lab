@@ -1,0 +1,83 @@
+-- PostgreSQL Lab
+-- Etapa 1: criação das tabelas base.
+-- Todos os nomes e dados deste laboratório são fictícios.
+
+CREATE SCHEMA IF NOT EXISTS lab;
+
+DROP TABLE IF EXISTS lab.itens_venda CASCADE;
+DROP TABLE IF EXISTS lab.pagamentos CASCADE;
+DROP TABLE IF EXISTS lab.movimentacoes_estoque CASCADE;
+DROP TABLE IF EXISTS lab.vendas CASCADE;
+DROP TABLE IF EXISTS lab.produtos CASCADE;
+DROP TABLE IF EXISTS lab.categorias CASCADE;
+DROP TABLE IF EXISTS lab.clientes CASCADE;
+
+CREATE TABLE lab.clientes (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nome VARCHAR(120) NOT NULL,
+    email VARCHAR(180) NOT NULL,
+    documento VARCHAR(20),
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    atualizado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE lab.categorias (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    nome VARCHAR(80) NOT NULL,
+    descricao TEXT,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE lab.produtos (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    categoria_id BIGINT,
+    sku VARCHAR(40) NOT NULL,
+    nome VARCHAR(140) NOT NULL,
+    preco NUMERIC(12,2) NOT NULL,
+    estoque_atual NUMERIC(12,3) NOT NULL DEFAULT 0,
+    estoque_minimo NUMERIC(12,3) NOT NULL DEFAULT 0,
+    ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    atualizado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE lab.vendas (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    cliente_id BIGINT,
+    status VARCHAR(20) NOT NULL DEFAULT 'ABERTA',
+    subtotal NUMERIC(12,2) NOT NULL DEFAULT 0,
+    desconto NUMERIC(12,2) NOT NULL DEFAULT 0,
+    total NUMERIC(12,2) NOT NULL DEFAULT 0,
+    criada_em TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    finalizada_em TIMESTAMPTZ
+);
+
+CREATE TABLE lab.itens_venda (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    venda_id BIGINT NOT NULL,
+    produto_id BIGINT NOT NULL,
+    quantidade NUMERIC(12,3) NOT NULL,
+    preco_unitario NUMERIC(12,2) NOT NULL,
+    desconto NUMERIC(12,2) NOT NULL DEFAULT 0,
+    total_item NUMERIC(12,2) NOT NULL
+);
+
+CREATE TABLE lab.pagamentos (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    venda_id BIGINT NOT NULL,
+    forma VARCHAR(30) NOT NULL,
+    valor NUMERIC(12,2) NOT NULL,
+    status VARCHAR(20) NOT NULL DEFAULT 'CONFIRMADO',
+    pago_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE lab.movimentacoes_estoque (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    produto_id BIGINT NOT NULL,
+    tipo VARCHAR(10) NOT NULL,
+    quantidade NUMERIC(12,3) NOT NULL,
+    referencia VARCHAR(80),
+    criado_em TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
